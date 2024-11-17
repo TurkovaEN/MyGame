@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <SFML/Graphics.hpp>
 
-int ground = 150;
+int ground = 550;
 using namespace sf;
 
 
@@ -11,32 +11,47 @@ public:
 	FloatRect rect; // координаты ширины и высоты
 	bool onGround; // проверка находится ли спрайт на земле
 	Sprite sprite; //
-//	float currentFrame; //текущий кадр
+	float currentFrame; //текущий кадр
 
 	PLAYER(Texture &image)
 	{
-		rect = FloatRect(0, 0, 40, 50);
-		dx = dy = 0;
+		sprite.setTexture(image);
+		rect = FloatRect(220, 189, 158, 112); //rect (x,y, width, height), (x,y) - координаты левого верхнего угла, width - ширина, height - высота
+
+		dx = dy = 0.1;
+		currentFrame = 0;
 	}
 
-	void update(float time) {
+	void update(float time) 
+	{
 		rect.left += dx * time; //координата х
 
 		if (!onGround) 
-			dy = dy + 0.00005 * time; //ускорение свободного падения при прыжке
+			dy = dy + 0.0005 * time; //ускорение свободного падения при прыжке
 		rect.top += dy * time; //координата у
 		onGround = false;
 
+		
 		if (rect.top > ground)
 		{
 			rect.top = ground; 
 			dy = 0;
 			onGround = true;
 		}
-
+		
 		
 
+		currentFrame += 0.005 * time;
+		if (currentFrame > 7)
+			currentFrame -= 7;
+
+		if (dx>0)
+			sprite.setTextureRect(IntRect(160 * int(currentFrame) + 220, 185, 160, 118));
+		if(dx<0)
+			sprite.setTextureRect(IntRect(160 * int(currentFrame) + 220 + 160, 185, -160, 118));
+
 		sprite.setPosition(rect.left, rect.top); //вывод спрайта в позицию х, у
+
 		dx = 0;
 	}
 
@@ -44,32 +59,22 @@ public:
 
 int main()
 {
-	RenderWindow window(VideoMode(900, 900), "MyGame"); //создание окна
+	RenderWindow window(VideoMode(2500, 1250), "MyGame"); //создание окна
 	Texture t;
-		t.loadFromFile("testik.png"); //добавление текстуры спрайта из файла
-		
-	PLAYER p(t);
-	
-	p.sprite.setTexture(t);
-	p.sprite.setPosition(-0, 0);
-		
+	t.loadFromFile("sprite_character.png"); //добавление текстуры спрайта из файла
 
-	/*
-	Sprite s;
-	
-	Texture t;
-	t.loadFromFile("sprite1.png"); //добавление текстуры спрайта из файла
-	s.setTexture(t);
-	s.setTextureRect(IntRect(253, 286, 120, 150));
-	
-	s.setPosition(50, 100); //установка спрайта на карту
-	*/
-	
+	PLAYER p(t);
+
+	float currentFrame = 0;
+
 	Clock clock;
 	while (window.isOpen())
 	{
 		float time = clock.getElapsedTime().asMicroseconds();
 		clock.restart();
+
+		time = time / 400;
+
 		Event event; //обработка событий
 		while (window.pollEvent(event))
 		{
@@ -81,35 +86,30 @@ int main()
 
 		if (Keyboard::isKeyPressed(Keyboard::Left))
 		{
-			//s.move(-0.1, 0);
-			p.dx = -0,1;
+			p.dx = -0.1;
 		}
 
 		if (Keyboard::isKeyPressed(Keyboard::Right))
 		{
-			//s.move(0.1, 0);
-			p.dx = 0,1;
+			p.dx = 0.1;
 		}
 
 		if (Keyboard::isKeyPressed(Keyboard::Up))
 		{
-			//s.move(0, 0.1);
 			if (p.onGround) {
-				p.dy = -0.4;
+				p.dy = -0.4; //высота прыжка
 				p.onGround = false;
 			}
 		}
 		p.update(time);
 
 		window.clear(Color::White); //задний фон окна
-		window.draw(p.sprite); //вывод спрайта
+
+		window.draw(p.sprite);
+
 		window.display(); //обновление содержимого окна
+
+		
 	}
-
-
 	return 0;
-
-
-
-
 }
