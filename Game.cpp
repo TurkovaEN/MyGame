@@ -4,6 +4,23 @@
 int ground = 550;
 using namespace sf;
 
+const int H = 12;
+const int W = 50;
+
+String TileMap[H] = {
+	"#################################################",
+	"#                                               #",
+	"#  K                                         E  #",
+	"#########                              ##########",
+	"#                                               #",
+	"#                                               #",
+	"#           #######         #########           #",
+	"#                                               #",
+	"#                                               #",
+	"#                    ####                       #",
+	"#                                               #",
+	"#################################################",
+};
 
 class PLAYER {
 public:
@@ -24,14 +41,16 @@ public:
 
 	void update(float time) 
 	{
+		
 		rect.left += dx * time; //координата х
+	
 
 		if (!onGround) 
 			dy = dy + 0.0005 * time; //ускорение свободного падения при прыжке
 		rect.top += dy * time; //координата у
 		onGround = false;
 
-		
+		//прыжок
 		if (rect.top > ground)
 		{
 			rect.top = ground; 
@@ -68,6 +87,9 @@ int main()
 	float currentFrame = 0;
 
 	Clock clock;
+
+	RectangleShape rectangle(Vector2f(32,32));
+
 	while (window.isOpen())
 	{
 		float time = clock.getElapsedTime().asMicroseconds();
@@ -104,6 +126,20 @@ int main()
 		p.update(time);
 
 		window.clear(Color::White); //задний фон окна
+
+		for(int i = 0; i < H; i++)
+			for (int j = 0; j < W; j++) {
+				if (TileMap[i][j] == '#')
+					rectangle.setFillColor(Color::Black); //стены
+				else if (TileMap[i][j] == 'K')
+					rectangle.setFillColor(Color::Yellow); //для ключа
+				else if (TileMap[i][j] == 'E')
+					rectangle.setFillColor(Color::Blue); //для выхода
+				else if (TileMap[i][j] == ' ')
+					continue;
+				rectangle.setPosition(j * 32, i * 32);
+				window.draw(rectangle);
+			}
 
 		window.draw(p.sprite);
 
