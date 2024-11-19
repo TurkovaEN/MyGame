@@ -122,6 +122,9 @@ int main()
 
 	Texture stone;
 	stone.loadFromFile("stone.jpg");
+	Sprite block;
+	block.setTexture(stone);
+
 	
 	PLAYER p(t);
 
@@ -173,11 +176,11 @@ int main()
 		for(int i = 0; i < H; i++)
 			for (int j = 0; j < W; j++) {
 				if (TileMap[i][j] == '#')
-					rectangle.setFillColor(Color::Black); //стены
+					rectangle.setTexture(&stone); //стены
 				else if (TileMap[i][j] == 'K')
 					rectangle.setFillColor(Color::Yellow); //для ключа
 				else if (TileMap[i][j] == 'E')
-					rectangle.setFillColor(Color::Blue); //для выхода
+					rectangle.setFillColor(Color::Blue);	//для выхода
 				else if (TileMap[i][j] == ' ')
 					continue;
 				rectangle.setPosition(j * 32, i * 32);
