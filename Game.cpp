@@ -107,10 +107,22 @@ public:
 
 int main()
 {
-	RenderWindow window(VideoMode(1600, 735), "MyGame"); //создание окна
+	RenderWindow window(VideoMode(1600, 730), "MyGame"); //создание окна
+
+	
+			//текстуры
 	Texture t;
 	t.loadFromFile("sprite_character.png"); //добавление текстуры спрайта из файла
 
+	Texture background;
+	background.loadFromFile("background.jpg");
+	Sprite BG;
+	BG.setTexture(background);
+	BG.setPosition(0, 0);
+
+	Texture stone;
+	stone.loadFromFile("stone.jpg");
+	
 	PLAYER p(t);
 
 	float currentFrame = 0;
@@ -155,7 +167,8 @@ int main()
 		}
 		p.update(time);
 
-		window.clear(Color::White); //задний фон окна
+		window.clear();
+		window.draw(BG);
 
 		for(int i = 0; i < H; i++)
 			for (int j = 0; j < W; j++) {
