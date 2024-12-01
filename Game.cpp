@@ -6,8 +6,9 @@ using namespace sf;
 
 const int H = 23;
 const int W = 50;
+const int TILE_SIZE = 32;
 
-String TileMap[H] = {
+std::string TileMap[H] = {
 	"#################################################",
 	"#                                               #",
 	"#                                               #",
@@ -33,6 +34,82 @@ String TileMap[H] = {
 	"#################################################"
 };
 
+class MAP {
+public:
+	Texture stoneTexture; // “екстура дл€ тайлов
+
+	MAP(const std::string& stonePath) {
+		if (!stoneTexture.loadFromFile(stonePath)) {
+			// ќбработка ошибки загрузки текстуры
+			throw std::runtime_error("Ќе удалось загрузить текстуру камн€!");
+		}
+	}
+
+	// ћетод дл€ отрисовки карты
+	void draw(RenderWindow& window) const {
+		RectangleShape tile(Vector2f(TILE_SIZE, TILE_SIZE));
+		tile.setTexture(&stoneTexture);
+
+		for (int i = 0; i < H; ++i) {
+			for (int j = 0; j < W; ++j) {
+				if (TileMap[i][j] == '#') {
+					tile.setPosition(j * TILE_SIZE, i * TILE_SIZE);
+					window.draw(tile);
+				}
+			}
+		}
+	}
+
+	// ћетод дл€ получени€ размера карты
+	Vector2u getSize() const {
+		return Vector2u(W * TILE_SIZE, H * TILE_SIZE);
+	}
+};
+
+
+
+class MapCollider {
+public:
+	// ѕроверка столкновений
+	bool checkCollision(const FloatRect& rect, int dir) const {
+		for (int i = rect.top / TILE_SIZE; i < (rect.top + rect.height) / TILE_SIZE; i++) {
+			for (int j = rect.left / TILE_SIZE; j < (rect.left + rect.width) / TILE_SIZE; j++) {
+				if (i >= 0 && i < H && j >= 0 && j < W && TileMap[i][j] == '#') {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	//ќбработка столкновений
+	void handleCollision(FloatRect& rect, float& dx, float& dy, bool& onGround, int dir) {
+		for (int i = rect.top / TILE_SIZE; i < (rect.top + rect.height) / TILE_SIZE; ++i) {
+			for (int j = rect.left / TILE_SIZE; j < (rect.left + rect.width) / TILE_SIZE; ++j) {
+				if (i >= 0 && i < H && j >= 0 && j < W && TileMap[i][j] == '#') {
+					if (dir == 0) { // √оризонтальное столкновение
+						if (dx > 0) rect.left = j * TILE_SIZE - rect.width;
+						if (dx < 0) rect.left = j * TILE_SIZE + TILE_SIZE;
+						dx = 0;
+					}
+					else { //¬ертикальное столкновение
+						if (dy > 0) {
+							rect.top = i * TILE_SIZE - rect.height;
+							dy = 0;
+							onGround = true;
+						}
+						if (dy < 0) {
+							rect.top = i * TILE_SIZE + TILE_SIZE;
+							dy = 0;
+						}
+					}
+					break; 
+				}
+			}
+		}
+	}
+	
+};
+
 class PLAYER {
 public:
 	float dx, dy; //скорость
@@ -40,29 +117,29 @@ public:
 	bool onGround; // проверка находитс€ ли спрайт на земле
 	Sprite sprite; //
 	float currentFrame; //текущий кадр
+	
+	
 
 	PLAYER(Texture &image)
 	{
 		sprite.setTexture(image);
 		rect = FloatRect(220, 189, 158, 112); //rect (x,y, width, height), (x,y) - координаты левого верхнего угла, width - ширина, height - высота
-		
-
-
 		dx = dy = 0.1;
 		currentFrame = 0;
+		onGround = false;
 	}
 
-	void update(float time) 
+	void update(float time, MapCollider& mapCollider)
 	{
 		
 		rect.left += dx * time; //координата х
-		Collision(0);
+		mapCollider.handleCollision(rect, dx, dy, onGround, 0); // √оризонтальное столкновение
 
 		if (!onGround) 
 			dy = dy + 0.0005 * time; //ускорение свободного падени€ при прыжке
 		rect.top += dy * time; //координата у
 		onGround = false;
-		Collision(1);
+		mapCollider.handleCollision(rect, dx, dy, onGround, 1); //¬ертикальное столкновение
 
 
 		currentFrame += 0.005 * time;
@@ -78,38 +155,14 @@ public:
 
 		dx = 0;
 	}
-
-	//обработка столкновений
-	void Collision(int dir)
-	{
-		for (int i = rect.top / 32; i < (rect.top + rect.height) / 32; i++)
-			for (int j = rect.left / 32; j<(rect.left+rect.width)/32; j++) {
-				if (TileMap[i][j] == '#') {
-
-					if ((dx > 0)&&(dir==0)) rect.left = j * 32 - rect.width;
-					if ((dx < 0) && (dir == 0)) rect.left = j * 32 + 32;
-
-					if ((dy > 0) && (dir == 1)) {
-						rect.top = i * 32 - rect.height;
-						dy = 0;
-						onGround = true;
-					}
-					if ((dy < 0) && (dir == 1)) {
-						rect.top = i * 32 + 32;
-						dy = 0;
-					}
-				}
-
-			}
-	}
 	
 };
 
 int main()
 {
-	RenderWindow window(VideoMode(1600, 730), "MyGame"); //создание окна
+	RenderWindow window;
+	window.create(VideoMode(1570, 730), "MyGame", Style::Close);
 
-	
 			//текстуры
 	Texture t;
 	t.loadFromFile("sprite_character.png"); //добавление текстуры спрайта из файла
@@ -120,19 +173,14 @@ int main()
 	BG.setTexture(background);
 	BG.setPosition(0, 0);
 
-	Texture stone;
-	stone.loadFromFile("stone.jpg");
-	Sprite block;
-	block.setTexture(stone);
-
+	MAP GameMap("stone.jpg");
 	
 	PLAYER p(t);
+	MapCollider MapCollider;
 
 	float currentFrame = 0;
 
 	Clock clock;
-
-	RectangleShape rectangle(Vector2f(32,32));
 
 
 	while (window.isOpen())
@@ -168,26 +216,14 @@ int main()
 				p.onGround = false;
 			}
 		}
-		p.update(time);
+		p.update(time, MapCollider);
 
 		window.clear();
-		window.draw(BG);
-
-		for(int i = 0; i < H; i++)
-			for (int j = 0; j < W; j++) {
-				if (TileMap[i][j] == '#')
-					rectangle.setTexture(&stone); //стены
-				else if (TileMap[i][j] == 'K')
-					rectangle.setFillColor(Color::Yellow); //дл€ ключа
-				else if (TileMap[i][j] == 'E')
-					rectangle.setFillColor(Color::Blue);	//дл€ выхода
-				else if (TileMap[i][j] == ' ')
-					continue;
-				rectangle.setPosition(j * 32, i * 32);
-				window.draw(rectangle);
-			}
-
-		window.draw(p.sprite);
+		window.draw(BG); //отрисовка заднего фона
+		
+		GameMap.draw(window); // отрисовка карты
+		
+		window.draw(p.sprite); // отрисовка спрайта
 
 		window.display(); //обновление содержимого окна
 
