@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <SFML/Graphics.hpp>
+#include <iostream>
 
 int ground = 580;
 using namespace sf;
@@ -66,8 +67,6 @@ public:
 	}
 };
 
-
-
 class MapCollider {
 public:
 	// Проверка столкновений
@@ -122,11 +121,11 @@ public:
 	PLAYER(Texture &image)
 	{
 		sprite.setTexture(image);
-		rect = FloatRect(220, 189, 158, 112); //rect (x,y, width, height), (x,y) - координаты левого верхнего угла, width - ширина, height - высота
+		rect = FloatRect(245, 186, 110, 112); //rect (x,y, width, height), (x,y) - координаты левого верхнего угла, width - ширина, height - высота
 
 		dx = dy = 0.1;
 		currentFrame = 0;
-		onGround = false;
+		sprite.setTextureRect(IntRect(245, 186, 110, 112));
 	}
 
 	void update(float time, MapCollider& mapCollider)
@@ -147,13 +146,14 @@ public:
 			currentFrame -= 7;
 
 		if (dx>0)
-			sprite.setTextureRect(IntRect(160 * int(currentFrame) + 220, 185, 160, 118));
+			sprite.setTextureRect(IntRect(160 * int(currentFrame) + 245, 185, 95, 118));
 		if(dx<0)
-			sprite.setTextureRect(IntRect(160 * int(currentFrame) + 220 + 160, 185, -160, 118));
+			sprite.setTextureRect(IntRect(160 * int(currentFrame) + 245 + 95, 185, -95, 118));
 
 		sprite.setPosition(rect.left, rect.top); //вывод спрайта в позицию х, у
 
 		dx = 0;
+
 	}
 	
 };
@@ -254,6 +254,7 @@ int main()
 	RenderWindow window;
 	window.create(VideoMode(1570, 730), "MyGame", Style::Close);
 
+
 			//текстуры
 	Texture t;
 	t.loadFromFile("sprite_character.png"); //добавление текстуры спрайта из файла
@@ -328,15 +329,10 @@ int main()
 
 		window.clear();
 		window.draw(BG); //отрисовка заднего фона
-		
 		GameMap.draw(window); // отрисовка карты
 		keyDoor.draw(window); // Отрисовка ключа и двери
-
-		window.draw(p.sprite); // отрисовка спрайта
-
-		window.display(); //обновление содержимого окна
-
-		
+		window.draw(p.sprite); // отрисовка спрайта		
+		window.display(); //обновление содержимого окна	
 	}
 	return 0;
 }
