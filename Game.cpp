@@ -249,6 +249,27 @@ public:
 
 };
 
+class PlayerController {
+public:
+	// Метод для обработки ввода
+	void handleInput(PLAYER& player) {
+		if (Keyboard::isKeyPressed(Keyboard::Left)|| Keyboard::isKeyPressed(Keyboard::A)) {
+			player.dx = -0.1;
+		}
+
+		if (Keyboard::isKeyPressed(Keyboard::Right)|| Keyboard::isKeyPressed(Keyboard::D)) {
+			player.dx = 0.1;
+		}
+
+		if (Keyboard::isKeyPressed(Keyboard::Up)|| Keyboard::isKeyPressed(Keyboard::W)|| Keyboard::isKeyPressed(Keyboard::Space)) {
+			if (player.onGround) {
+				player.dy = -0.45; // высота прыжка
+				player.onGround = false;
+			}
+		}
+	}
+};
+
 int main()
 {
 	RenderWindow window;
@@ -269,6 +290,7 @@ int main()
 	
 	PLAYER p(t);
 	MapCollider MapCollider;
+	PlayerController playerController;
 
 	float currentFrame = 0;
 
@@ -296,25 +318,10 @@ int main()
 				window.close();
 		}
 
-		//движение на стрелочки
 
-		if (Keyboard::isKeyPressed(Keyboard::Left))
-		{
-			p.dx = -0.1;
-		}
+		// Обработка ввода
+		playerController.handleInput(p); // Передаем объект PLAYER в PlayerController
 
-		if (Keyboard::isKeyPressed(Keyboard::Right))
-		{
-			p.dx = 0.1;
-		}
-
-		if (Keyboard::isKeyPressed(Keyboard::Up))
-		{
-			if (p.onGround) {
-				p.dy = -0.45; //высота прыжка
-				p.onGround = false;
-			}
-		}
 		p.update(time, MapCollider);
 
 		// Проверка на столкновение с ключом
