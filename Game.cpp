@@ -14,7 +14,7 @@ std::string TileMap[H] = {
 	"#                                               #",
 	"#                                               #",
 	"#                                               #",
-	"#  K                                         E  #",
+	"#                                               #",
 	"#########                              ##########",
 	"#                                               #",
 	"#                                               #",
@@ -118,12 +118,12 @@ public:
 	Sprite sprite; //
 	float currentFrame; //текущий кадр
 	
-	
 
 	PLAYER(Texture &image)
 	{
 		sprite.setTexture(image);
 		rect = FloatRect(220, 189, 158, 112); //rect (x,y, width, height), (x,y) - координаты левого верхнего угла, width - ширина, height - высота
+
 		dx = dy = 0.1;
 		currentFrame = 0;
 		onGround = false;
@@ -158,6 +158,97 @@ public:
 	
 };
 
+class KeyDoorInteraction {
+public:
+	bool hasKey = false;
+	Sprite keySprite;
+	Sprite doorSprite;
+	Texture keyTexture;
+	Texture doorClosedTexture;
+	Texture doorOpenedTexture;
+	Font font;
+	Text keyText;
+
+
+	KeyDoorInteraction(const std::string& keyPath, const std::string& doorClosedPath, const std::string& doorOpenedPath, const std::string& fontPath) {
+		if (!keyTexture.loadFromFile(keyPath)) {
+			throw std::runtime_error("Не удалось загрузить текстуру ключа!");
+		}
+		if (!doorClosedTexture.loadFromFile(doorClosedPath)) {
+			throw std::runtime_error("Не удалось загрузить текстуру закрытой двери!");
+		}
+		if (!doorOpenedTexture.loadFromFile(doorOpenedPath)) {
+			throw std::runtime_error("Не удалось загрузить текстуру открытой двери!");
+		}
+		if (!font.loadFromFile(fontPath)) {
+			throw std::runtime_error("Не удалось загрузить шрифт!");
+		}
+
+		keySprite.setTexture(keyTexture);
+		doorSprite.setTexture(doorClosedTexture);
+		keyText.setFont(font);
+		keyText.setCharacterSize(30);
+		keyText.setFillColor(sf::Color::White);
+		keyText.setPosition(35, 25);
+		updateKeyText();
+
+		//  Изначальные позиции ключа и двери 
+		keySprite.setPosition(1420, 160);
+		doorSprite.setPosition(1280, 550); 
+	}
+
+
+	void updateKeyText() {
+		std::string keyStatus = hasKey ?"yes" : "no";
+		keyText.setString(L"Key: " + keyStatus);
+	}
+
+
+	void draw(RenderWindow& window) const {
+		window.draw(keySprite);
+		window.draw(doorSprite);
+		window.draw(keyText);
+	}
+
+
+	bool checkKeyCollision(const FloatRect& playerRect) const {
+		return keySprite.getGlobalBounds().intersects(playerRect);
+	}
+
+
+	void handleKeyCollision() {
+		hasKey = true;
+		updateKeyText();
+		keySprite.setPosition(-100, -100); // Убираем ключ с экрана
+		doorSprite.setTexture(doorOpenedTexture);
+	}
+
+
+	bool checkDoorCollision(const FloatRect& playerRect) const {
+		return doorSprite.getGlobalBounds().intersects(playerRect);
+	}
+
+
+	bool isDoorOpen() const {
+		return hasKey;
+	}
+
+	void showWinMessage(RenderWindow& window) const {
+		Font font;
+		if (!font.loadFromFile("ofont.ru_Arial Cyr.ttf")) { // или путь к вашему шрифту
+			throw std::runtime_error("Не удалось загрузить шрифт!");
+		}
+		Text winText(L"Вы прошли уровень! Продолжение игры в разработке...", font, 32);
+		winText.setFillColor(sf::Color::Green);
+		winText.setPosition((window.getSize().x - winText.getLocalBounds().width) / 2.0f, (window.getSize().y - winText.getLocalBounds().height) / 2.0f);
+		window.draw(winText);
+		window.display();
+		sleep(seconds(3)); //Подождать 3 секунды
+	}
+
+
+};
+
 int main()
 {
 	RenderWindow window;
@@ -179,6 +270,13 @@ int main()
 	MapCollider MapCollider;
 
 	float currentFrame = 0;
+
+	KeyDoorInteraction keyDoor(
+		"key.png",  // Путь к текстуре ключа
+		"door_close.png", // Путь к текстуре закрытой двери
+		"door_open.png",  // Путь к текстуре открытой двери
+		"ofont.ru_Arial Cyr.ttf"  // Путь к шрифту
+	);
 
 	Clock clock;
 
@@ -218,11 +316,22 @@ int main()
 		}
 		p.update(time, MapCollider);
 
+		// Проверка на столкновение с ключом
+		if (keyDoor.checkKeyCollision(p.rect)) {
+			keyDoor.handleKeyCollision();
+		}
+		// Проверка на столкновение с открытой дверью и переход на следующий уровень
+		if (keyDoor.checkDoorCollision(p.rect) && keyDoor.isDoorOpen()) {
+			keyDoor.showWinMessage(window);
+			window.close(); // Закрыть окно после победы
+		}
+
 		window.clear();
 		window.draw(BG); //отрисовка заднего фона
 		
 		GameMap.draw(window); // отрисовка карты
-		
+		keyDoor.draw(window); // Отрисовка ключа и двери
+
 		window.draw(p.sprite); // отрисовка спрайта
 
 		window.display(); //обновление содержимого окна
