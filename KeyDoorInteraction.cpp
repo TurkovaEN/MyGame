@@ -1,4 +1,5 @@
 #include "KeyDoorInteraction.h"
+#include <SFML/Graphics.hpp>
 
 KeyDoorInteraction::KeyDoorInteraction(const std::string& keyPath, const std::string& doorClosedPath, const std::string& doorOpenedPath, const std::string& fontPath)
     : hasKey(false) {
@@ -29,7 +30,7 @@ KeyDoorInteraction::KeyDoorInteraction(const std::string& keyPath, const std::st
 }
 
 void KeyDoorInteraction::updateKeyText() {
-    sf::String keyStatus = hasKey ? "yes" : "no";
+    std::string keyStatus = hasKey ? "yes" : "no";
     keyText.setString("Key: " + keyStatus);
 }
 
@@ -60,7 +61,7 @@ bool KeyDoorInteraction::isDoorOpen() const {
 
 void KeyDoorInteraction::showWinMessage(sf::RenderWindow& window) const {
     sf::Font font;
-    if (!font.loadFromFile("ofont.ru_Arial Cyr.ttf")) { // или путь к вашему шрифту
+    if (!font.loadFromFile("arial_bolditalicmt.ttf")) { 
         throw std::runtime_error("Не удалось загрузить шрифт!");
     }
     sf::Text winText(L"Вы прошли уровень! Продолжение игры в разработке...", font, 32);

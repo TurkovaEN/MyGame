@@ -26,9 +26,9 @@ int main() {
 
     KeyDoorInteraction keyDoor(
         "key.png",  // Путь к текстуре ключа
-        "door_close.png", // Путь к текстуре закрытой двери
-        "door_open.png",  // Путь к текстуре открытой двери
-        "ofont.ru_Arial Cyr.ttf"  // Путь к шрифту
+        "door_close.jpg", // Путь к текстуре закрытой двери
+        "door_open.jpg",  // Путь к текстуре открытой двери
+        "arial_bolditalicmt.ttf"  // Путь к шрифту
     );
     sf::Clock clock;
 
