@@ -4,6 +4,8 @@
 #include "PLAYER.h"
 #include "KeyDoorInteraction.h"
 #include "PlayerController.h"
+#include <iostream>
+#include <vector>
 
 
 
@@ -13,16 +15,54 @@ int main() {
 
     // текстуры
     sf::Texture t;
-    t.loadFromFile("sprite_character.png"); // добавление текстуры спрайта из файла
+
+    try {
+        if (!t.loadFromFile("sprite_character.png")) {
+            throw std::runtime_error("Не удалось загрузить текстуру персонажа!");
+        }
+    }
+    catch (const std::runtime_error& e) {
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE; // Завершение программы при ошибке
+    }
 
     sf::Texture background;
-    background.loadFromFile("background.jpg");
+
+    try {
+        if (!background.loadFromFile("background.jpg")) {
+            throw std::runtime_error("Не удалось загрузить текстуру фона!");
+        }
+    }
+    catch (const std::runtime_error& e) {
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE; // Завершение программы при ошибке
+    }
+
     sf::Sprite BG;
     BG.setTexture(background);
     BG.setPosition(0, 0);
 
-    MAP GameMap("stone.jpg");
-    PLAYER p(t);
+    // Создание массива объектов PLAYER
+    const int playerCount = 5; // Количество игроков
+    std::vector<PLAYER> players;
+    for (int i = 0; i < playerCount; ++i) {
+        players.emplace_back(t); // Добавляем игроков в массив
+    }
+
+    // Создание двумерного массива объектов MAP
+    const int mapCount = 2; // Количество карт
+    MAP* maps[mapCount];
+    try {
+        for (int i = 0; i < mapCount; ++i) {
+            maps[i] = new MAP("stone.jpg"); // Создаем карты
+        }
+    }
+    catch (const std::runtime_error& e) {
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE; // Завершение программы при ошибке
+    }
+
+
     MapCollider mapCollider;
     PlayerController playerController;
 
@@ -32,6 +72,7 @@ int main() {
         "door_open.jpg",  // Путь к текстуре открытой двери
         "arial_bolditalicmt.ttf"  // Путь к шрифту
     );
+
     sf::Clock clock;
 
     while (window.isOpen()) {
@@ -46,31 +87,42 @@ int main() {
                 window.close();
         }
 
-        // Обработка ввода
-        playerController.handleInput(p); // Передаем объект PLAYER в PlayerController
-
-        p.update(time, mapCollider);
+        // Обработка ввода для всех игроков
+        for (auto& player : players) {
+            playerController.handleInput(player); // Передаем объект PLAYER в PlayerController
+            player.update(time, mapCollider);
+        }
 
         // Проверка на столкновение с ключом
-        if (keyDoor.checkKeyCollision(p.rect)) {
+        if (keyDoor.checkKeyCollision(players[0].rect)) { // Проверяем только первого игрока
             keyDoor.handleKeyCollision();
         }
         // Проверка на столкновение с открытой дверью и переход на следующий уровень
-        if (keyDoor.checkDoorCollision(p.rect) && keyDoor.isDoorOpen()) {
+        if (keyDoor.checkDoorCollision(players[0].rect) && keyDoor.isDoorOpen()) {
             keyDoor.showWinMessage(window);
             window.close(); // Закрыть окно после победы
         }
 
         window.clear();
         window.draw(BG); // отрисовка заднего фона
-        GameMap.draw(window); // отрисовка карты
+        for (int i = 0; i < mapCount; ++i) {
+            maps[i]->draw(window); // отрисовка карт
+        }
         keyDoor.draw(window); // Отрисовка ключа и двери
-        window.draw(p.sprite); // отрисовка спрайта		
+        for (const auto& player : players) {
+            window.draw(player.sprite); // отрисовка спрайтов игроков
+        }
 
-        // Вывод информации о игроке
-        printPlayerInfo(p);
+        // Вывод информации о первом игроке
+        printPlayerInfo(players[0]);
+
 
         window.display(); // обновление содержимого окна	
     }
+    // Освобождение памяти для карт
+    for (int i = 0; i < mapCount; ++i) {
+        delete maps[i];
+    }
+
     return 0;
 }
