@@ -5,6 +5,8 @@
 #include "KeyDoorInteraction.h"
 #include "PlayerController.h"
 
+
+
 int main() {
     sf::RenderWindow window;
     window.create(sf::VideoMode(1570, 730), "MyGame", sf::Style::Close);
@@ -64,6 +66,10 @@ int main() {
         GameMap.draw(window); // отрисовка карты
         keyDoor.draw(window); // Отрисовка ключа и двери
         window.draw(p.sprite); // отрисовка спрайта		
+
+        // Вывод информации о игроке
+        printPlayerInfo(p);
+
         window.display(); // обновление содержимого окна	
     }
     return 0;

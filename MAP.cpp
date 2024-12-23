@@ -26,10 +26,15 @@ std::string TileMap[H] = {
     "#################################################"
 };
 
+
+int MAP::mapCount = 0; // Инициализация статического поля
+
 MAP::MAP(const std::string& stonePath) {
     if (!stoneTexture.loadFromFile(stonePath)) {
         throw std::runtime_error("Не удалось загрузить текстуру камня!");
     }
+
+    mapCount++; // Увеличиваем счетчик при создании новой карты
 }
 
 void MAP::draw(sf::RenderWindow& window) const {

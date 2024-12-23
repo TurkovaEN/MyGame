@@ -1,5 +1,6 @@
 #include "PLAYER.h"
 #include "MapCollider.h"
+#include <iostream>
 
 PLAYER::PLAYER(sf::Texture& image) {
     sprite.setTexture(image);
@@ -11,8 +12,14 @@ PLAYER::PLAYER(sf::Texture& image) {
 }
 
 void PLAYER::update(float time, MapCollider& mapCollider) {
+    /*
     rect.left += dx * time; // координата х
     mapCollider.handleCollision(rect, dx, dy, onGround, 0); // Горизонтальное столкновение
+
+    */
+    this->rect.left += this->dx * time; // Используем this для ясности
+    mapCollider.handleCollision(this->rect, this->dx, this->dy, this->onGround, 0);
+
 
     if (!onGround)
         dy = dy + 0.0005 * time; // ускорение свободного падения при прыжке
@@ -32,4 +39,11 @@ void PLAYER::update(float time, MapCollider& mapCollider) {
     sprite.setPosition(rect.left, rect.top); // вывод спрайта в позицию х, у
 
     dx = 0;
+
+    
+}
+
+void printPlayerInfo(const PLAYER & player) {
+        std::cout << "Player Position: (" << player.rect.left << ", " << player.rect.top << ")\n";
+        std::cout << "Player Speed: (" << player.dx << ", " << player.dy << ")\n";
 }
