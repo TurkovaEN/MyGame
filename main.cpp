@@ -2,12 +2,25 @@
 #include "MAP.h"
 #include "MapCollider.h"
 #include "PLAYER.h"
+#include "Enemy.h" // Подключаем новый класс
 #include "KeyDoorInteraction.h"
 #include "PlayerController.h"
 #include <iostream>
 #include <vector>
+#include <algorithm> // Для std::sort и std::find_if
 
+// Функция для сортировки игроков по скорости
+bool compareSpeed(const PLAYER& a, const PLAYER& b) {
+    return a.dx < b.dx; // Сравниваем по скорости
+}
 
+// Функция для поиска игрока по позиции
+PLAYER* findPlayerByPosition(std::vector<PLAYER>& players, float x, float y) {
+    auto it = std::find_if(players.begin(), players.end(), [x, y](const PLAYER& player) {
+        return player.rect.left == x && player.rect.top == y;
+        });
+    return (it != players.end()) ? &(*it) : nullptr; // Возвращаем указатель на игрока или nullptr
+}
 
 int main() {
     sf::RenderWindow window;
@@ -48,7 +61,26 @@ int main() {
     for (int i = 0; i < playerCount; ++i) {
         players.emplace_back(t); // Добавляем игроков в массив
     }
+    // Создание врагов
+    const int enemyCount = 3; // Количество врагов
+    std::vector<Enemy> enemies;
+    for (int i = 0; i < enemyCount; ++i) {
+        enemies.emplace_back(t); // Добавляем врагов в массив
+    }
 
+    // Сортировка игроков по скорости
+    std::sort(players.begin(), players.end(), compareSpeed);
+
+    // Поиск игрока по позиции
+    PLAYER* foundPlayer = findPlayerByPosition(players, players[0].rect.left, players[0].rect.top);
+    if (foundPlayer) {
+        std::cout << "Игрок найден на позиции: (" << foundPlayer->rect.left << ", " << foundPlayer->rect.top << ")\n";
+    }
+    else {
+        std::cout << "Игрок не найден.\n";
+    }
+
+    
     // Создание двумерного массива объектов MAP
     const int mapCount = 2; // Количество карт
     MAP* maps[mapCount];
@@ -61,6 +93,7 @@ int main() {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE; // Завершение программы при ошибке
     }
+    
 
 
     MapCollider mapCollider;
@@ -92,6 +125,9 @@ int main() {
             playerController.handleInput(player); // Передаем объект PLAYER в PlayerController
             player.update(time, mapCollider);
         }
+        for (auto& enemy : enemies) {
+            enemy.update(time, mapCollider); // Обновляем врагов
+        }
 
         // Проверка на столкновение с ключом
         if (keyDoor.checkKeyCollision(players[0].rect)) { // Проверяем только первого игрока
@@ -111,6 +147,9 @@ int main() {
         keyDoor.draw(window); // Отрисовка ключа и двери
         for (const auto& player : players) {
             window.draw(player.sprite); // отрисовка спрайтов игроков
+        }
+        for (const auto& enemy : enemies) {
+            window.draw(enemy.sprite); // отрисовка спрайтов врагов
         }
 
         // Вывод информации о первом игроке
