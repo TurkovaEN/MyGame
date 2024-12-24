@@ -5,24 +5,13 @@
 #include "Enemy.h" // Подключаем новый класс
 #include "KeyDoorInteraction.h"
 #include "PlayerController.h"
+#include "GameObjectManager.h" // Подключаем шаблонный класс
 #include <iostream>
 #include <vector>
-#include <algorithm> // Для std::sort и std::find_if
 
-// Функция для сортировки игроков по скорости
-bool compareSpeed(const PLAYER& a, const PLAYER& b) {
-    return a.dx < b.dx; // Сравниваем по скорости
-}
-
-// Функция для поиска игрока по позиции
-PLAYER* findPlayerByPosition(std::vector<PLAYER>& players, float x, float y) {
-    auto it = std::find_if(players.begin(), players.end(), [x, y](const PLAYER& player) {
-        return player.rect.left == x && player.rect.top == y;
-        });
-    return (it != players.end()) ? &(*it) : nullptr; // Возвращаем указатель на игрока или nullptr
-}
 
 int main() {
+    
     sf::RenderWindow window;
     window.create(sf::VideoMode(1570, 730), "MyGame", sf::Style::Close);
 
@@ -55,46 +44,26 @@ int main() {
     BG.setTexture(background);
     BG.setPosition(0, 0);
 
-    // Создание массива объектов PLAYER
+    // Создание менеджеров для игроков и врагов
+    GameObjectManager<PLAYER> playerManager;
+    GameObjectManager<Enemy> enemyManager;
+
+    // Создание объектов PLAYER и добавление их в менеджер
     const int playerCount = 5; // Количество игроков
-    std::vector<PLAYER> players;
     for (int i = 0; i < playerCount; ++i) {
-        players.emplace_back(t); // Добавляем игроков в массив
+        playerManager.addObject(new PLAYER(t)); // Добавляем нового игрока
     }
+
     // Создание врагов
     const int enemyCount = 3; // Количество врагов
-    std::vector<Enemy> enemies;
     for (int i = 0; i < enemyCount; ++i) {
-        enemies.emplace_back(t); // Добавляем врагов в массив
+        enemyManager.addObject(new Enemy(t)); // Добавляем нового врага
     }
 
-    // Сортировка игроков по скорости
-    std::sort(players.begin(), players.end(), compareSpeed);
 
-    // Поиск игрока по позиции
-    PLAYER* foundPlayer = findPlayerByPosition(players, players[0].rect.left, players[0].rect.top);
-    if (foundPlayer) {
-        std::cout << "Игрок найден на позиции: (" << foundPlayer->rect.left << ", " << foundPlayer->rect.top << ")\n";
-    }
-    else {
-        std::cout << "Игрок не найден.\n";
-    }
-
-    
-    // Создание двумерного массива объектов MAP
-    const int mapCount = 2; // Количество карт
-    MAP* maps[mapCount];
-    try {
-        for (int i = 0; i < mapCount; ++i) {
-            maps[i] = new MAP("stone.jpg"); // Создаем карты
-        }
-    }
-    catch (const std::runtime_error& e) {
-        std::cerr << e.what() << std::endl;
-        return EXIT_FAILURE; // Завершение программы при ошибке
-    }
-    
-
+ 
+    MAP GameMap("stone.jpg");
+    PLAYER p(t);
 
     MapCollider mapCollider;
     PlayerController playerController;
@@ -119,49 +88,36 @@ int main() {
             if (event.type == sf::Event::Closed) // закрытие окна, нажатием на крестик
                 window.close();
         }
+        playerController.handleInput(p); 
 
-        // Обработка ввода для всех игроков
-        for (auto& player : players) {
-            playerController.handleInput(player); // Передаем объект PLAYER в PlayerController
-            player.update(time, mapCollider);
-        }
-        for (auto& enemy : enemies) {
-            enemy.update(time, mapCollider); // Обновляем врагов
-        }
+        p.update(time, mapCollider);
 
-        // Проверка на столкновение с ключом
-        if (keyDoor.checkKeyCollision(players[0].rect)) { // Проверяем только первого игрока
+        if (keyDoor.checkKeyCollision(p.getRect())) {
             keyDoor.handleKeyCollision();
         }
-        // Проверка на столкновение с открытой дверью и переход на следующий уровень
-        if (keyDoor.checkDoorCollision(players[0].rect) && keyDoor.isDoorOpen()) {
+
+        if (keyDoor.checkDoorCollision(p.getRect()) && keyDoor.isDoorOpen()) {
             keyDoor.showWinMessage(window);
-            window.close(); // Закрыть окно после победы
+            window.close();
         }
+
+        // Обновление всех игроков и врагов
+        playerManager.updateAll(time, mapCollider);
+        enemyManager.updateAll(time, mapCollider);
 
         window.clear();
-        window.draw(BG); // отрисовка заднего фона
-        for (int i = 0; i < mapCount; ++i) {
-            maps[i]->draw(window); // отрисовка карт
-        }
-        keyDoor.draw(window); // Отрисовка ключа и двери
-        for (const auto& player : players) {
-            window.draw(player.sprite); // отрисовка спрайтов игроков
-        }
-        for (const auto& enemy : enemies) {
-            window.draw(enemy.sprite); // отрисовка спрайтов врагов
-        }
-
-        // Вывод информации о первом игроке
-        printPlayerInfo(players[0]);
-
+        window.draw(BG); 
+        GameMap.draw(window); 
+        keyDoor.draw(window); 
+        window.draw(p.getSprite()); 
+        // Отображение всех игроков и врагов
+        playerManager.displayAll(std::cout); // Вывод информации о игроках
+        enemyManager.displayAll(std::cout); // Вывод информации о врагах
 
         window.display(); // обновление содержимого окна	
     }
-    // Освобождение памяти для карт
-    for (int i = 0; i < mapCount; ++i) {
-        delete maps[i];
-    }
+   
 
     return 0;
+   
 }

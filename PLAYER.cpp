@@ -12,11 +12,7 @@ PLAYER::PLAYER(sf::Texture& image) {
 }
 
 void PLAYER::update(float time, MapCollider& mapCollider) {
-    /*
-    rect.left += dx * time; // координата х
-    mapCollider.handleCollision(rect, dx, dy, onGround, 0); // Горизонтальное столкновение
-
-    */
+   
     this->rect.left += this->dx * time; // Используем this для ясности
     mapCollider.handleCollision(this->rect, this->dx, this->dy, this->onGround, 0);
 
@@ -43,7 +39,12 @@ void PLAYER::update(float time, MapCollider& mapCollider) {
     
 }
 
-void printPlayerInfo(const PLAYER & player) {
-        std::cout << "Player Position: (" << player.rect.left << ", " << player.rect.top << ")\n";
-        std::cout << "Player Speed: (" << player.dx << ", " << player.dy << ")\n";
+void PLAYER::display(std::ostream& os) const {
+    os << "Player Position: (" << rect.left << ", " << rect.top << ")\n";
+    os << "Player Speed: (" << dx << ", " << dy << ")\n";
+}
+
+std::ostream& operator<<(std::ostream& os, const PLAYER& player) {
+    player.display(os);
+    return os;
 }
